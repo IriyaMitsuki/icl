@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>V2RAY Converter V15</title>
+  <link href="/icon.ico" rel="icon" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { font-weight: bold !important; }
+    body { background: #121212; color: #eee; font-family: monospace; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+    h2 { text-align: center; margin: 10px 0 20px; font-size: 1.2em; }
+    .container { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+    .label { color: #bbb; font-size: 0.9em; margin-bottom: 4px; user-select: none; }
+    textarea { width: 100%; height: 150px; background: #1e1e1e; color: #eee; padding: 10px; border-radius: 5px; resize: vertical; box-sizing: border-box; font-size: 14px; line-height: 1.3em; border: 3px solid; font-family: monospace; }
+    #inputConfig { border-color: #28a745; }
+    #outputResult { border-color: #dc3545; }
+    .buttons-row { display: flex; width: 100%; gap: 10px; margin-top: 5px; }
+    .buttons-left, .buttons-right { display: flex; flex-direction: column; gap: 10px; width: 50%; }
+    .clear-row { margin-top: 10px; width: 100%; }
+    .clear-row button { width: 100%; }
+    button { color: #fff; padding: 10px 15px; border: none; cursor: pointer; border-radius: 5px; font-size: 14px; user-select: none; white-space: nowrap; transition: filter .2s ease; text-align: center; }
+    #btnConvert { background: #28a745; }
+    #btnConvertBack { background: #007bff; }
+    #btnTextBase64 { background: #ff9800; }
+    #btnClear { background: #dc3545; }
+    #btnCopy, #btnDownload { background: #000; border: 2px solid #999; }
+    #btnLoadFile { background: #6c757d; }
+    button:hover { filter: brightness(1.2); }
+    #fileInput { display: none; }
+
+    /* GeoIP и фильтр */
+    #filterRow { display: flex; flex-direction: column; gap: 5px; margin-bottom: 2px; position: relative; }
+    #geoRow { display: flex; align-items: center; gap: 8px; }
+    #ipGeoToggle { width: 20px; height: 20px; cursor: pointer; }
+    #ipGeoLabel { font-size: 0.9em; margin-left: -7px; color: #bbb; user-select: none; }
+    #geoServiceInput { flex: 1; height: 36px; max-width: 190px; padding: 0 10px; font-size: 14px; border: 3px solid #007bff; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; }
+    #statusContainer { display: flex; align-items: center; color: #00ffee; font-size: 0.9em; }
+    .spinner { width: 16px; height: 16px; margin-right: -10px; border: 2px solid #0af33; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #controlsRow { display: flex; gap: 7px; align-items: center; }
+    #btnCountry { width: 36px; height: 36px; background: #007bff; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    #btnPing { width: 36px; height: 36px; background: #3e3e3e; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1em; padding:0; }
+    #btnPing span { line-height: 1em; }
+    #filterInput { flex: 1; height: 36px; padding: 0 10px; font-size: 14px; border: 3px solid #007bff; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; }
+    #btnFilter { background: #007bff; color: #fff; border: none; border-radius: 5px; padding: 0 15px; font-size: 14px; cursor: pointer; height: 36px; }
+
+    #countryPopup { position: absolute; top: 96px; left: 10; width: 59vw; max-width: calc(100% - 20px); height: calc(100vh - 210px); background: #1e1e1e; border: 3px solid #007bff; border-radius: 5px; overflow: hidden; display: none; box-sizing: border-box; z-index:100; }
+    #countryPopup .search-container { position: sticky; top: 0; background: #1e1e1e; padding: 10px; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    #countryPopup .search-container input { width: calc(100% - 20px); padding: 6px 10px; font-size: 14px; border: 2px solid #007bff; border-radius: 4px; background: #2a2a2a; color: #eee; box-sizing: border-box; }
+    #countryPopup .country-list { height: calc(100% - 56px); overflow-y: auto; }
+    #countryPopup .country-item { display: flex; align-items: center; padding: 6px 10px; cursor: pointer; }
+    #countryPopup .country-item:hover { background: #007bff22; }
+    #countryPopup .country-item span { margin-left: 5px; }
+    #countryPopup .country-item span:first-child { font-family: "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif; }
+
+    @media (max-width:480px) {
+      textarea { height: 130px; font-size:13px; }
+      .buttons-left button, .buttons-right button, #btnFilter, #btnCountry, #btnPing { font-size:13px; padding:8px 12px; }
+      #filterInput, #geoServiceInput { font-size:13px; height:32px; }
+      #btnCountry, #btnPing { width:32px; height:32px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+</head>
+<body>
+  <h2>V2RAY Converter V15</h2>
+
+  <div id="filterRow">
+    <div id="geoRow">
+      <input type="checkbox" id="ipGeoToggle">
+      <label for="ipGeoToggle" id="ipGeoLabel">GeoIP</label>
+      <input id="geoServiceInput" type="text" placeholder="https://ipwhois.app/json/{ip}" >
+      <div id="statusContainer">
+        <div class="spinner" id="spinner"></div>
+        <span id="processStatus"></span>
+      </div>
+    </div>
+    <div class="label">
+      <span>Страны</span><span style="margin-left:60px;">Фильтр результата</span>
+      <div id="controlsRow">
+        <button id="btnCountry">🌎</button>
+        <button id="btnPing"><span>pi<br>ng</span></button>
+        <input id="filterInput" placeholder="ключевой текст или флаг..." />
+        <button id="btnFilter">ок</button>
+      </div>
+      <div id="countryPopup"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div><div class="label">Исходный JSON, URL, текст</div><textarea id="inputConfig" placeholder="Вставь json, url, текст..."></textarea></div>
+    <div><div class="label">Результат</div><textarea id="outputResult" placeholder="Результат..."></textarea></div>
+    <div class="buttons-row">
+      <div class="buttons-left">
+        <button id="btnConvert">json → url</button>
+        <button id="btnConvertBack">url → json</button>
+        <button id="btnTextBase64">текст ↔ base64</button>
+      </div>
+      <div class="buttons-right">
+        <button id="btnCopy">скопировать</button>
+        <button id="btnDownload">скачать</button>
+        <button id="btnLoadFile">загрузить файл</button>
+      </div>
+    </div>
+    <div class="clear-row"><button id="btnClear">очистить</button></div>
+  </div>
+
+  <input type="file" id="fileInput" accept=".txt,.json,.yaml,.yml">
+  <a id="hiddenDownloadLink" style="display:none;"></a>
+
+  <script>
+    
+ const countries = [
+  { flag: '🌎', name: 'OFF' },
+  { flag: '🇦🇫', name: 'AFGHANISTAN' },
+  { flag: '🇦🇽', name: 'ALAND ISLAND' },
+  { flag: '🇦🇱', name: 'ALBANIA' },
+  { flag: '🇩🇿', name: 'ALGERIA' },
+  { flag: '🇦🇸', name: 'AMERICAN SAMOA' },
+  { flag: '🇦🇩', name: 'ANDORRA' },
+  { flag: '🇦🇴', name: 'ANGOLA' },
+  { flag: '🇦🇮', name: 'ANGUILLA' },
+  { flag: '🇦🇬', name: 'ANTIGUA AND BARBUDA' },
+  { flag: '🇦🇶', name: 'ANTARCTICA' },
+  { flag: '🇦🇷', name: 'ARGENTINA' },
+  { flag: '🇦🇲', name: 'ARMENIA' },
+  { flag: '🇦🇼', name: 'ARUBA' },
+  { flag: '🇦🇨', name: 'ASCENSION ISLAND' },
+  { flag: '🇦🇺', name: 'AUSTRALIA' },
+  { flag: '🇦🇹', name: 'AUSTRIA' },
+  { flag: '🇦🇿', name: 'AZERBAIJAN' },
+  { flag: '🇧🇸', name: 'BAHAMAS' },
+  { flag: '🇧🇭', name: 'BAHRAIN' },
+  { flag: '🇧🇩', name: 'BANGLADESH' },
+  { flag: '🇧🇧', name: 'BARBADOS' },
+  { flag: '🇧🇾', name: 'BELARUS' },
+  { flag: '🇧🇪', name: 'BELGIUM' },
+  { flag: '🇧🇿', name: 'BELIZE' },
+  { flag: '🇧🇯', name: 'BENIN' },
+  { flag: '🇧🇴', name: 'BOLIVIA (PLURINATIONAL STATE OF)' },
+  { flag: '🇧🇦', name: 'BOSNIA AND HERZEGOVINA' },
+  { flag: '🇧🇻', name: 'BOUVET ISLAND' },
+  { flag: '🇧🇼', name: 'BOTSWANA' },
+  { flag: '🇧🇷', name: 'BRAZIL' },
+ { flag: '🇮🇴', name: 'BRITISH INDIAN OCEAN TERRITORY' },
+  { flag: '🇧🇳', name: 'BRUNEI DARUSSALAM' },
+  { flag: '🇧🇬', name: 'BULGARIA' },
+  { flag: '🇧🇫', name: 'BURKINA FASO' },
+  { flag: '🇧🇮', name: 'BURUNDI' },
+{ flag: '🇳🇨', name: 'CALEDONIA NEW' },
+  { flag: '🇰🇭', name: 'CAMBODIA' },
+  { flag: '🇨🇲', name: 'CAMEROON' },
+  { flag: '🇨🇦', name: 'CANADA' },
+  { flag: '🇮🇨', name: 'CANARY ISLANDS' },
+  { flag: '🇨🇻', name: 'CAPE VERDE' },
+ { flag: '🇧🇶', name: 'CARRIBBEAN NETHERLANDS' },
+  { flag: '🇨🇫', name: 'CENTRAL AFRICAN REPUBLIC' },
+  { flag: '🇹🇩', name: 'CHAD' },
+  { flag: '🇨🇱', name: 'CHILE' },
+  { flag: '🇨🇳', name: 'CHINA' },
+  { flag: '🇨🇽', name: 'CHRISTMAS ISLAND' },
+ { flag: '🇨🇵', name: 'CLIPPERTON ISLAND' },
+  { flag: '🇨🇨', name: 'COCOS (KEELING) ISLANDS' },
+  { flag: '🇨🇴', name: 'COLOMBIA' },
+  { flag: '🇰🇲', name: 'COMOROS' },
+  { flag: '🇨🇬', name: 'CONGO' },
+  { flag: '🇨🇩', name: 'CONGO, THE DEMOCRATIC REPUBLIC OF THE' },
+  { flag: '🇨🇰', name: 'COOK ISLANDS' },
+  { flag: '🇨🇷', name: 'COSTA RICA' },
+ { flag: '🇨🇮', name: 'COTE D`IVOIRE' },
+  { flag: '🇭🇷', name: 'CROATIA' },
+  { flag: '🇨🇺', name: 'CUBA' },
+  { flag: '🇨🇼', name: 'CURAÇAO' },
+  { flag: '🇨🇾', name: 'CYPRUS' },
+  { flag: '🇨🇿', name: 'CZECHIA' },
+  { flag: '🇩🇰', name: 'DENMARK' },
+ { flag: '🇩🇬', name: 'DIEGO GARCIA' },
+  { flag: '🇩🇯', name: 'DJIBOUTI' },
+  { flag: '🇩🇲', name: 'DOMINICA' },
+  { flag: '🇩🇴', name: 'DOMINICAN REPUBLIC' },
+  { flag: '🇪🇨', name: 'ECUADOR' },
+  { flag: '🇪🇬', name: 'EGYPT' },
+  { flag: '🇸🇻', name: 'EL SALVADOR' },
+  { flag: '🇬🇶', name: 'EQUATORIAL GUINEA' },
+  { flag: '🇪🇷', name: 'ERITREA' },
+  { flag: '🇪🇪', name: 'ESTONIA' },
+  { flag: '🇸🇿', name: 'ESWATINI' },
+  { flag: '🇪🇹', name: 'ETHIOPIA' },
+  { flag: '🇪🇺', name: 'EUROPEAN UNION' },
+  { flag: '🇫🇰', name: 'FALKLAND ISLANDS (MALVINAS)' },
+  { flag: '🇫🇴', name: 'FAROE ISLANDS' },
+  { flag: '🇫🇯', name: 'FIJI' },
+  { flag: '🇫🇮', name: 'FINLAND' },
+  { flag: '🇫🇷', name: 'FRANCE' },
+  { flag: '🇹🇫', name: 'FRENCH SOUTHERN TERRITORIES' },
+  { flag: '🇬🇦', name: 'GABON' },
+  { flag: '🇬🇲', name: 'GAMBIA' },
+  { flag: '🇩🇪', name: 'GERMANY' },
+  { flag: '🇬🇭', name: 'GHANA' },
+  { flag: '🇬🇮', name: 'GIBRALTAR' },
+  { flag: '🇬🇷', name: 'GREECE' },
+  { flag: '🇬🇱', name: 'GREENLAND' },
+  { flag: '🇬🇩', name: 'GRENADA' },
+  { flag: '🇬🇪', name: 'GEORGIA' },
+  { flag: '🇬🇬', name: 'GUERNSEY' },
+  { flag: '🇬🇺', name: 'GUAM' },
+{ flag: '🇬🇫', name: 'GUIANA FRENCH' },
+  { flag: '🇵🇬', name: 'GUINEA NEW(PAPUA)' },
+  { flag: '🇬🇳', name: 'GUINEA' },
+  { flag: '🇬🇼', name: 'GUINEA-BISSAU' },
+  { flag: '🇬🇾', name: 'GUYANA' },
+  { flag: '🇭🇹', name: 'HAITI' },
+  { flag: '🇭🇲', name: 'HEARD ISLAND AND MCDONALD ISLANDS' },
+  { flag: '🇭🇳', name: 'HONDURAS' },
+  { flag: '🇭🇰', name: 'HONG KONG' },
+  { flag: '🇭🇺', name: 'HUNGARY' },
+  { flag: '🇮🇳', name: 'INDIA' },
+  { flag: '🇮🇩', name: 'INDONESIA' },
+  { flag: '🇮🇷', name: 'IRAN (ISLAMIC REPUBLIC OF)' },
+  { flag: '🇮🇶', name: 'IRAQ' },
+  { flag: '🇮🇪', name: 'IRELAND' },
+  { flag: '🇮🇱', name: 'ISRAEL' },
+  { flag: '🇮🇲', name: 'ISLE OF MAN' },
+  { flag: '🇮🇹', name: 'ITALY' },
+  { flag: '🇯🇲', name: 'JAMAICA' },
+  { flag: '🇯🇵', name: 'JAPAN' },
+  { flag: '🇯🇪', name: 'JERSEY' },
+  { flag: '🇯🇴', name: 'JORDAN' },
+  { flag: '🇰🇿', name: 'KAZAKHSTAN' },
+  { flag: '🇰🇪', name: 'KENYA' },
+  { flag: '🇰🇮', name: 'KIRIBATI' },
+  { flag: '🇽🇰', name: 'KOSOVO' },
+  { flag: '🇰🇼', name: 'KUWAIT' },
+  { flag: '🇰🇬', name: 'KYRGYZSTAN' },
+  { flag: '🇱🇦', name: "LAO PEOPLE'S DEMOCRATIC REPUBLIC" },
+  { flag: '🇱🇻', name: 'LATVIA' },
+  { flag: '🇱🇧', name: 'LEBANON' },
+  { flag: '🇱🇸', name: 'LESOTHO' },
+  { flag: '🇱🇷', name: 'LIBERIA' },
+  { flag: '🇱🇾', name: 'LIBYA' },
+  { flag: '🇱🇮', name: 'LIECHTENSTEIN' },
+  { flag: '🇱🇹', name: 'LITHUANIA' },
+  { flag: '🇱🇺', name: 'LUXEMBOURG' },
+  { flag: '🇲🇴', name: 'MACAO, SPECIAL ADMINISTRATIVE REGION OF CHINA' },
+  { flag: '🇲🇰', name: 'MACEDONIA NORTH' },
+  { flag: '🇲🇬', name: 'MADAGASCAR' },
+  { flag: '🇲🇼', name: 'MALAWI' },
+  { flag: '🇲🇾', name: 'MALAYSIA' },
+  { flag: '🇲🇻', name: 'MALDIVES' },
+  { flag: '🇲🇱', name: 'MALI' },
+  { flag: '🇲🇹', name: 'MALTA' },
+  { flag: '🇲🇭', name: 'MARSHALL ISLANDS' },
+  { flag: '🇲🇶', name: 'MARTINIQUE' },
+  { flag: '🇲🇷', name: 'MAURITANIA' },
+  { flag: '🇲🇺', name: 'MAURITIUS' },
+  { flag: '🇾🇹', name: 'MAYOTTE' },
+  { flag: '🇲🇵', name: 'MARIANA NORTHERN ISLANDS' },
+  { flag: '🇲🇽', name: 'MEXICO' },
+  { flag: '🇫🇲', name: 'MICRONESIA (FEDERATED STATES OF)' },
+  { flag: '🇲🇩', name: 'MOLDOVA, REPUBLIC OF' },
+  { flag: '🇲🇨', name: 'MONACO' },
+  { flag: '🇲🇳', name: 'MONGOLIA' },
+  { flag: '🇲🇪', name: 'MONTENEGRO' },
+  { flag: '🇲🇸', name: 'MONTSERRAT' },
+  { flag: '🇲🇦', name: 'MOROCCO' },
+  { flag: '🇲🇿', name: 'MOZAMBIQUE' },
+  { flag: '🇲🇲', name: 'MYANMAR' },
+  { flag: '🇳🇦', name: 'NAMIBIA' },
+  { flag: '🇳🇷', name: 'NAURU' },
+  { flag: '🇳🇵', name: 'NEPAL' },
+  { flag: '🇳🇱', name: 'NETHERLANDS' },
+  { flag: '🇳🇮', name: 'NICARAGUA' },
+  { flag: '🇳🇪', name: 'NIGER' },
+  { flag: '🇳🇬', name: 'NIGERIA' },
+  { flag: '🇳🇺', name: 'NIUE' },
+  { flag: '🇳🇫', name: 'NORFOLK ISLAND' },
+  { flag: '🇳🇴', name: 'NORWAY' },
+  { flag: '🇴🇲', name: 'OMAN' },
+  { flag: '🇵🇰', name: 'PAKISTAN' },
+  { flag: '🇵🇼', name: 'PALAU' },
+  { flag: '🇵🇸', name: 'PALESTINE, STATE OF' },
+  { flag: '🇵🇦', name: 'PANAMA' },
+  { flag: '🇵🇾', name: 'PARAGUAY' },
+  { flag: '🇵🇪', name: 'PERU' },
+  { flag: '🇵🇭', name: 'PHILIPPINES' },
+  { flag: '🇵🇳', name: 'PITCAIRN' },
+  { flag: '🇵🇱', name: 'POLAND' },
+ { flag: '🇵🇫', name: 'POLYNESIA FRENCH' },
+  { flag: '🇵🇹', name: 'PORTUGAL' },
+ { flag: '🇵🇷', name: 'PUERTO RICO' },
+ { flag: '🇶🇦', name: 'QATAR' },
+  { flag: '🇷🇪', name: 'RÉUNION' },
+  { flag: '🇷🇴', name: 'ROMANIA' },
+  { flag: '🇷🇸', name: 'SERBIA' },
+  { flag: '🇷🇺', name: 'RUSSIAN FEDERATION' },
+  { flag: '🇷🇼', name: 'RWANDA' },
+  { flag: '🇧🇱', name: 'SAINT BARTHÉLEMY' },
+  { flag: '🇸🇭', name: 'SAINT HELENA, ASCENSION AND TRISTAN DA CUNHA' },
+  { flag: '🇰🇳', name: 'SAINT KITTS AND NEVIS' },
+  { flag: '🇱🇨', name: 'SAINT LUCIA' },
+  { flag: '🇵🇲', name: 'SAINT PIERRE AND MIQUELON' },
+  { flag: '🇲🇫', name: 'SAINT MARTIN (FRENCH PART)' },
+  { flag: '🇻🇨', name: 'SAINT VINCENT AND THE GRENADINES' },
+  { flag: '🇸🇲', name: 'SAN MARINO' },
+  { flag: '🇸🇹', name: 'SAO TOME AND PRINCIPE' },
+ { flag: '🇸🇦', name: 'SAUDI ARABIA' },
+  { flag: '🇸🇳', name: 'SENEGAL' },
+  { flag: '🇸🇨', name: 'SEYCHELLES' },
+ { flag: '🇱🇰', name: 'SHRI LANKA' },
+  { flag: '🇸🇱', name: 'SIERRA LEONE' },
+  { flag: '🇸🇬', name: 'SINGAPORE' },
+  { flag: '🇸🇽', name: 'SINT MAARTEN (DUTCH PART)' },
+  { flag: '🇸🇰', name: 'SLOVAKIA' },
+  { flag: '🇸🇮', name: 'SLOVENIA' },
+  { flag: '🇸🇧', name: 'SOLOMON ISLANDS' },
+  { flag: '🇸🇴', name: 'SOMALIA' },
+  { flag: '🇸🇸', name: 'SOUTH SUDAN' },
+  { flag: '🇿🇦', name: 'SOUTH AFRICA' },
+  { flag: '🇬🇸', name: 'SOUTH GEORGIA AND THE SOUTH SANDWICH ISLANDS' }, 
+ { flag: '🇪🇦', name: 'SPAIN' },
+  { flag: '🇪🇸', name: 'SPAIN CEUTA AND MELILLA' },
+  { flag: '🇸🇷', name: 'SURINAME' },
+  { flag: '🇸🇩', name: 'SUDAN' },
+ { flag: '🇨🇭', name: 'SWITZERLAND' },
+  { flag: '🇸🇾', name: 'SYRIA' },
+  { flag: '🇹🇯', name: 'TAJIKISTAN' },
+  { flag: '🇹🇿', name: 'TANZANIA, UNITED REPUBLIC OF' },
+  { flag: '🇹🇭', name: 'THAILAND' },
+  { flag: '🇹🇱', name: 'TIMOR-LESTE' },
+  { flag: '🇹🇬', name: 'TOGO' },
+  { flag: '🇹🇰', name: 'TOKELAU' },
+  { flag: '🇹🇴', name: 'TONGA' },
+  { flag: '🇹🇷', name: 'TURKEY' },
+  { flag: '🇹🇲', name: 'TURKMENISTAN' },
+  { flag: '🇹🇨', name: 'TURKS AND CAICOS ISLANDS' },
+  { flag: '🇹🇻', name: 'TUVALU' },
+  { flag: '🇺🇬', name: 'UGANDA' },
+  { flag: '🇺🇦', name: 'UKRAINE' },
+  { flag: '🇦🇪', name: 'UNITED ARAB EMIRATES' },
+  { flag: '🇬🇧', name: 'UNITED KINGDOM' },
+  { flag: '🇺🇳', name: 'UNITED NATIONS' },
+  { flag: '🇺🇸', name: 'UNITED STATES OF AMERICA' },
+  { flag: '🇺🇾', name: 'URUGUAY' },
+  { flag: '🇺🇿', name: 'UZBEKISTAN' },
+  { flag: '🇻🇦', name: 'VATICAN CITY' },
+  { flag: '🇻🇺', name: 'VANUATU' },
+  { flag: '🇻🇪', name: 'VENEZUELA (BOLIVARIAN REPUBLIC OF)' },
+  { flag: '🇻🇳', name: 'VIETNAM' },
+  { flag: '🇻🇬', name: 'VIRGIN ISLANDS (BRITISH)' },
+  { flag: '🇻🇮', name: 'VIRGIN ISLANDS (U.S.)' },
+ { flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', name: 'WALES' },
+  { flag: '🇼🇫', name: 'WALLIS AND FUTUNA' },
+  { flag: '🇪🇭', name: 'WESTERN SAHARA' },
+  { flag: '🇾🇪', name: 'YEMEN' },
+  { flag: '🇿🇲', name: 'ZAMBIA' },
+   { flag: '🇳🇿', name: 'ZEALAND NEW' },
+  { flag: '🇿🇼', name: 'ZIMBABWE' },
+];
+
+    function extractAllJSON(text) {
+      const res = [], stack = [], starts = [];
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === '{') {
+          if (!stack.length) starts.push(i);
+          stack.push('{');
+        } else if (text[i] === '}') {
+          stack.pop();
+          if (!stack.length && starts.length) {
+            const s = starts.pop();
+            try { res.push(JSON.parse(text.slice(s, i + 1))); } catch {}
+          }
+        }
+      }
+      return res;
+    }
+
+    function countryCodeToFlag(cc) {
+      return cc.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65));
+    }
+
+    function buildGeoUrl(host) {
+      const tpl = document.getElementById('geoServiceInput').value.trim().replace(/\/+$/, '');
+      if (tpl.includes('{ip}')) return tpl.replace(/{ip}/g, host);
+      if (tpl.includes('?')) return `${tpl}&ip=${host}`;
+      return `${tpl}/${host}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const inEl = document.getElementById('inputConfig'),
+            outEl = document.getElementById('outputResult'),
+            fileInput = document.getElementById('fileInput'),
+            filterInput = document.getElementById('filterInput'),
+            btnFilter = document.getElementById('btnFilter'),
+            btnCountry = document.getElementById('btnCountry'),
+            btnPing = document.getElementById('btnPing'),
+            countryPopup = document.getElementById('countryPopup'),
+            ipGeoToggle = document.getElementById('ipGeoToggle'),
+            spinner = document.getElementById('spinner'),
+            statusEl = document.getElementById('processStatus');
+      let selectedCountry = 'OFF', pinging = false, controllers = [], resultsPing = [];
+      let searchEl, listEl;
+
+      function initCountryPopup() {
+        countryPopup.innerHTML = '';
+        const container = document.createElement('div');
+        container.className = 'search-container';
+        searchEl = document.createElement('input');
+        searchEl.type = 'text';
+        searchEl.placeholder = 'Поиск…';
+        container.appendChild(searchEl);
+        countryPopup.appendChild(container);
+        listEl = document.createElement('div');
+        listEl.className = 'country-list';
+        countryPopup.appendChild(listEl);
+        searchEl.addEventListener('input', () => filterCountries(searchEl.value));
+        filterCountries('');
+      }
+
+      function filterCountries(term) {
+        const lower = term.toLowerCase();
+        listEl.innerHTML = '';
+        countries.forEach(c => {
+          const matchName = !lower || c.name.toLowerCase().startsWith(lower);
+          const matchFlag = term.includes(c.flag);
+          if (matchName || matchFlag) {
+            const item = document.createElement('div');
+            item.className = 'country-item';
+            item.innerHTML = `<span>${c.flag}</span><span>${c.name}</span>`;
+            item.onclick = () => {
+              selectedCountry = c.flag;
+              btnCountry.textContent = c.flag;
+              countryPopup.style.display = 'none';
+              searchEl.value = '';
+            };
+            listEl.appendChild(item);
+          }
+        });
+      }
+
+      btnCountry.addEventListener('click', e => {
+        e.stopPropagation();
+        if (countryPopup.style.display === 'block') {
+          countryPopup.style.display = 'none';
+          if (searchEl) {
+            searchEl.value = '';
+            filterCountries('');
+          }
+        } else {
+          if (!searchEl) initCountryPopup();
+          searchEl.value = '';
+          filterCountries('');
+          countryPopup.style.display = 'block';
+          searchEl.focus();
+        }
+      });
+
+      document.addEventListener('click', () => {
+        if (countryPopup.style.display === 'block') {
+          countryPopup.style.display = 'none';
+          if (searchEl) {
+            searchEl.value = '';
+            filterCountries('');
+          }
+        }
+      });
+
+      countryPopup.addEventListener('click', e => e.stopPropagation());
+
+      function setStatus(txt, show = false) {
+        statusEl.textContent = txt;
+        spinner.style.display = show ? 'inline-block' : 'none';
+      }
+
+      async function pingHost(host) {
+        const controller = new AbortController();
+        controllers.push(controller);
+        const timeoutMs = 5000, start = performance.now();
+        try {
+          await Promise.race([
+            fetch('http://' + host, { mode: 'no-cors', signal: controller.signal }),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))
+          ]);
+          const duration = Math.round(performance.now() - start);
+          return { host, time: duration, status: `🔘 ${duration}ms` };
+        } catch {
+          return { host, time: Infinity, status: '❌ тайм-аут' };
+        }
+      }
+
+      async function pingAll() {
+        pinging = true; controllers = []; resultsPing = [];
+        const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length;
+        for (let i = 0; i < total; i++) {
+          if (!pinging) break;
+          let host;
+          try { host = new URL(lines[i]).hostname; }
+          catch { const m = lines[i].match(/\/\/([^\/:]+)/); host = m ? m[1] : lines[i]; }
+          const res = await pingHost(host);
+          resultsPing.push({ original: lines[i], ...res });
+          setStatus(`пинг… ${Math.round(resultsPing.length / total * 100)}%`, true);
+          const sorted = resultsPing.slice().sort((a, b) => a.time - b.time);
+          outEl.value = sorted.map(r => `${r.original} ${r.status}`).join('\n');
+        }
+        setStatus('готово!', false); pinging = false;
+      }
+
+      function cancelPing() {
+        pinging = false; controllers.forEach(c => c.abort()); setStatus('', false);
+      }
+
+      btnPing.onclick = () => pinging ? cancelPing() : pingAll();
+
+      btnFilter.onclick = async () => {
+        const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length, results = [];
+        setStatus('запуск...', true);
+        if (ipGeoToggle.checked) {
+          const seen = {};
+          for (let i = 0; i < total; i++) {
+            let host;
+            try { host = new URL(lines[i]).hostname; }
+            catch { const m = lines[i].match(/\/\/([^\/:]+)/); host = m ? m[1] : lines[i]; }
+            if (!seen[host]) {
+              try {
+                const d = await (await fetch(buildGeoUrl(host))).json();
+                const code = d.country_code || d.countryCode || d.code || d.geoplugin_countryCode || d.country;
+                const name = d.country_name || d.countryName || d.geoplugin_countryName || d.country || host;
+                seen[host] = code ? `${countryCodeToFlag(code)} ${name}` : host;
+              } catch { seen[host] = host; }
+            }
+            results.push(`${lines[i].split('#')[0]}#${seen[host]}`);
+            setStatus(`обработка (${Math.round((i + 1) / total * 100)}%)...`, true);
+          }
+        } else {
+          for (let i = 0; i < total; i++) {
+            let dec;
+            try { dec = decodeURIComponent(lines[i]); } catch { dec = lines[i]; }
+            const term = filterInput.value.trim().toLowerCase();
+            const okText = !term || dec.toLowerCase().includes(term) || lines[i].toLowerCase().includes(term);
+            const okCountry = selectedCountry === 'OFF' || dec.includes(selectedCountry) || lines[i].includes(selectedCountry);
+            if (okText && okCountry) results.push(dec);
+            setStatus(`обработка (${Math.round((i + 1) / total * 100)}%)...`, true);
+          }
+        }
+        outEl.value = results.join('\n'); setStatus('готово!', false);
+      };
+
+      document.getElementById('btnLoadFile').onclick = () => fileInput.click();
+      fileInput.onchange = e => {
+        const fr = new FileReader();
+        fr.onload = () => inEl.value = fr.result;
+        fr.readAsText(e.target.files[0]);
+      };
+      document.getElementById('btnClear').onclick = () => { inEl.value = ''; outEl.value = ''; };
+      document.getElementById('btnCopy').onclick = async () => { await navigator.clipboard.writeText(outEl.value); alert('Скопировано!'); };
+      document.getElementById('btnDownload').onclick = () => {
+        const d = outEl.value.trim(); if (!d) return alert('Нет данных');
+        const link = document.getElementById('hiddenDownloadLink');
+        link.href = URL.createObjectURL(new Blob([d], { type: 'text/plain' }));
+        link.download = 'result.txt'; link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      };
+      document.getElementById('btnTextBase64').onclick = () => {
+        const t = inEl.value.trim(); if (!t) { outEl.value = 'отсутствует текст'; return; }
+        try { outEl.value = decodeURIComponent(escape(atob(t))); }
+        catch { outEl.value = btoa(unescape(encodeURIComponent(t))); }
+      };
+      document.getElementById('btnConvert').onclick = () => {
+        let raw = inEl.value;
+        const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
+        if (f !== -1 && l > f) raw = raw.slice(f, l + 1);
+        if (!raw.trim()) { outEl.value = 'отсутствует json'; return; }
+        const objs = extractAllJSON(raw), urls = [];
+        objs.forEach(obj => {
+          if (obj.configType === 'VLESS' && obj.customConfig && obj.password && obj.server) {
+            buildURLFromLegacy(obj, urls);
+            return;
+          }
+          if (obj.outboundBean) {
+            buildURLsFromOutboundBean(obj, urls);
+            return;
+          }
+          if (obj.custom_json && Array.isArray(obj.custom_json.outbounds)) {
+            obj.custom_json.outbounds.forEach(o => buildURLFromOutbound(o, obj.remarks, urls));
+            return
+          }
+          if (obj.server && obj.method && obj.password && obj.server_port) {
+            const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, '');
+            let u = `ss://${a}@${obj.server}:${obj.server_port}`;
+            if (obj.remarks) u += `#${encodeURIComponent(obj.remarks)}`;
+            urls.push(u);
+            return;
+          }
+          if (obj.configType === 'VLESS' && obj.security === 'reality' && obj.server) {
+            const p = new URLSearchParams();
+            p.set('encryption', obj.method || 'none');
+            p.set('security', obj.security);
+            if (obj.flow) p.set('flow', obj.flow);
+            if (obj.alpn) p.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
+            p.set('allowInsecure', obj.insecure ? '1' : '0');
+            p.set('type', obj.network || '');
+            if (obj.sni) p.set('sni', obj.sni);
+            if (obj.fingerPrint) p.set('fp', obj.fingerPrint);
+            if (obj.publicKey) p.set('pbk', obj.publicKey);
+            if (obj.shortId) p.set('sid', obj.shortId);
+            const t = obj.remarks ? encodeURIComponent(obj.remarks) : '';
+            urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${p.toString()}#${t}`);
+            return;
+          }
+          (obj.outbounds || obj.fullConfig?.outbounds || []).forEach(o => buildURLFromOutbound(o, obj.remarks, urls));
+        });
+        outEl.value = urls.join('\n');
+      };
+      document.getElementById('btnConvertBack').onclick = () => {
+        if (!inEl.value.trim()) { outEl.value = 'отсутствует url'; return; }
+        const lines = inEl.value.trim().split(/\r?\n/).filter(Boolean), arr = [];
+        lines.forEach(line => {
+          if (line.startsWith('ss://')) {
+            const [main, hash] = line.slice(5).split('#');
+            const tag = hash ? decodeURIComponent(hash) : '';
+            const [auth, hp] = main.split('@');
+            const [method, password] = atob(auth).split(':');
+            const [address, portStr] = hp.split(':');
+            const port = parseInt(portStr, 10);
+            arr.push({ protocol: 'shadowsocks', tag, settings: { servers: [{ address, port: isNaN(port) ? 0 : port, method, password }] }, streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} } });
+          } else {
+            try {
+              const u = new URL(line), p = u.searchParams, proto = u.protocol.slice(0, -1);
+              const tag = decodeURIComponent(u.hash.slice(1)) || proto;
+              const typeParam = p.get('type') || '', headerType = p.get('headerType') || '';
+              const h = p.get('host') || '', path = p.get('path') || '';
+              const ssConf = {
+                network: typeParam === 'xhttp' ? 'splithttp' : typeParam,
+                security: p.get('security') || '',
+                packetEncoding: p.get('packetEncoding') || '',
+                tlsSettings: { serverName: p.get('sni') || '', fingerprint: p.get('fp') || '', allowInsecure: p.get('allowInsecure') === '1', alpn: p.get('alpn') ? p.get('alpn').split(',') : [] },
+                realitySettings: { publicKey: p.get('pbk') || '', shortId: p.get('sid') || '', serverName: p.get('sni') || '' },
+                kcpSettings: { seed: p.get('seed') || '' },
+                grpcSettings: { serviceName: p.get('serviceName') || '' }
+              };
+              if (headerType === 'http' && ssConf.network === 'tcp') ssConf.tcpSettings = { header: { type: 'http', request: { headers: { Host: [h] }, path: [path] } } };
+              else if (p.get('type') === 'http') ssConf.httpSettings = { host: [h], path };
+              else if (ssConf.network === 'splithttp') ssConf.splithttpSettings = { host: h, path }, ssConf.xhttpSettings = { host: h, path };
+              else if (ssConf.network === 'httpupgrade') ssConf.httpupgradeSettings = { host: h, path };
+              else if (ssConf.network === 'ws' && h) ssConf.wsSettings = { headers: { Host: h }, path };
+              if (proto === 'vless') arr.push({ protocol: 'vless', tag, settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, encryption: p.get('encryption') || 'none', flow: p.get('flow') || '' }] }] }, streamSettings: ssConf });
+              if (proto === 'vmess') arr.push({ protocol: 'vmess', tag, settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, security: p.get('encryption') || 'auto' }] }] }, streamSettings: ssConf });
+              if (proto === 'trojan') arr.push({ protocol: 'trojan', tag, settings: { servers: [{ address: u.hostname, port: +u.port, password: decodeURIComponent(u.username) }] }, streamSettings: ssConf });
+            } catch {}
+          }
+        });
+        const conf = {
+          dns: { fallbackStrategy: 'disabledIfAnyMatch', servers: [{ address: '8.8.8.8', queryStrategy: 'UseIP' }] },
+          inbounds: [
+            { listen: '0.0.0.0', port: 10805, protocol: 'socks', settings: { auth: 'noauth', udp: true }, tag: 'socks' },
+            { listen: '0.0.0.0', port: 1080, protocol: 'http', settings: { allowTransparent: true }, tag: 'http' },
+            { listen: '0.0.0.0', port: 10804, protocol: 'dokodemo-door', settings: { address: '0.0.0.0', network: 'tcp,udp', port: 10804 }, tag: 'dns-in' }
+          ],
+          log: { loglevel: 'warning' },
+          outbounds: arr,
+          policy: { levels: { '1': { connIdle: 30 } }, system: { statsOutboundDownlink: true, statsOutboundUplink: true } },
+          routing: { domainStrategy: 'AsIs', rules: [{ inboundTag: ['dns-in'], outboundTag: 'dns-out', type: 'field' }] },
+          stats: {}
+        };
+        outEl.value = JSON.stringify(conf, null, 2);
+      };
+
+      // Функции сборки URL остаются без изменений
+      function buildURLFromLegacy(o, urls) {
+        const p = new URLSearchParams();
+        p.set('security', o.method || 'none');
+        p.set('type', o.network || '');
+        if (o.headerType) p.set('headerType', o.headerType);
+        if (o.host) p.set('host', o.host);
+        if (o.sni) p.set('sni', o.sni);
+        if (o.path) p.set('path', o.path);
+        if (o.alpn) p.set('alpn', Array.isArray(o.alpn) ? o.alpn.join(',') : o.alpn);
+        if (o.pbk) p.set('pbk', o.pbk);
+        if (o.sid) p.set('sid', o.sid);
+        p.set('allowInsecure', o.insecure ? '1' : '0');
+        if (o.seed) p.set('seed', o.seed);
+        if (o.serviceName) p.set('serviceName', o.serviceName);
+        const tag = encodeURIComponent(o.remarks || o.customConfig.name || '');
+        const base = `vless://${o.password}@${o.server}:${o.serverPort}`;
+        urls.push(`${base}?${p.toString()}#${tag}`);
+      }
+      function buildURLsFromOutboundBean(obj, urls) {
+        buildURLFromOutbound(obj.outboundBean, obj.remarks, urls);
+      }
+      function buildURLFromOutbound(o, remarks, urls) {
+        const proto = o.protocol, tag = encodeURIComponent(remarks || o.tag || proto), p = new URLSearchParams();
+        let base = '';
+        if (proto === 'shadowsocks') {
+          (o.settings.servers || []).forEach(s => {
+            const a = btoa(`${s.method}:${s.password}`).replace(/=+$/, '');
+            urls.push(`ss://${a}@${s.address}:${s.port}#${tag}`);
+          });
+          return;
+        }
+        if (proto === 'vmess' || proto === 'vless') {
+          const v = o.settings.vnext?.[0], u = v?.users?.[0];
+          if (v && u) {
+            base = `${proto}://${u.id}@${v.address}:${v.port}`;
+            p.set('encryption', u.encryption || u.security || (proto === 'vmess' ? 'auto' : 'none'));
+            if (u.flow) p.set('flow', u.flow);
+          }
+        }
+        if (proto === 'trojan') {
+          const s = o.settings.servers?.[0];
+          if (s) base = `trojan://${encodeURIComponent(s.password)}@${s.address}:${s.port}`;
+        }
+        if (!base) return;
+        const s = o.streamSettings || {}, tls = s.tlsSettings || {}, rel = s.realitySettings || {};
+        if (s.security) p.set('security', s.security);
+        if (tls.allowInsecure) p.set('allowInsecure', '1');
+        if (Array.isArray(tls.alpn)) p.set('alpn', tls.alpn.join(','));
+        if (tls.serverName) p.set('sni', tls.serverName);
+        else if (rel.serverName) p.set('sni', rel.serverName);
+        if (tls.fingerprint) p.set('fp', tls.fingerprint);
+        if (rel.publicKey) p.set('pbk', rel.publicKey);
+        if (rel.shortId) p.set('sid', rel.shortId);
+        if (s.grpcSettings?.serviceName) p.set('serviceName', s.grpcSettings.serviceName);
+        if (s.kcpSettings?.seed) p.set('seed', s.kcpSettings.seed);
+        let net = s.network || (s.wsSettings ? 'ws' : s.httpupgradeSettings ? 'httpupgrade' : s.splithttpSettings ? 'splithttp' : s.httpSettings ? 'http' : 'tcp');
+        if (net === 'splithttp') net = 'xhttp';
+        p.set('type', net);
+        let host = '', path = '';
+        if (net === 'ws' && s.wsSettings) {
+          host = s.wsSettings.headers?.Host || '';
+          path = s.wsSettings.path || '';
+        } else if (net === 'xhttp' && s.splithttpSettings) {
+          host = s.splithttpSettings.host || '';
+          path = s.splithttpSettings.path || '';
+        } else if ((net === 'http' || net === 'xhttp' || net === 'httpupgrade') && s[net + 'Settings']) {
+          const cfg = s[net + 'Settings'];
+          host = Array.isArray(cfg.host) ? cfg.host[0] : cfg.host || '';
+          path = cfg.path || '';
+        } else if (net === 'tcp' && s.tcpSettings?.header?.type === 'http') {
+          const rq = s.tcpSettings.header.request;
+          host = (rq.headers?.Host || [''])[0] || '';
+          path = (rq.path || [''])[0] || '';
+          p.set('headerType', 'http');
+        }
+        if (host) p.set('host', host);
+        if (path) p.set('path', path);
+        urls.push(`${base}?${p.toString()}#${tag}`);
+      }
+    });
+  </script>
+</body>
+</html>
