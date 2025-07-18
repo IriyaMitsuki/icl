@@ -2,8 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>V2RAY Converter V15</title>
-  <link href="/icon.ico" rel="icon" type="image/x-icon">
+  <title>V2RAY Converter V18</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * { font-weight: bold !important; }
@@ -34,18 +33,18 @@
     #ipGeoToggle { width: 20px; height: 20px; cursor: pointer; }
     #ipGeoLabel { font-size: 0.9em; margin-left: -7px; color: #bbb; user-select: none; }
     #geoServiceInput { flex: 1; height: 36px; max-width: 190px; padding: 0 10px; font-size: 14px; border: 3px solid #007bff; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; }
-    #statusContainer { display: flex; align-items: center; color: #00ffee; font-size: 0.9em; }
-    .spinner { width: 16px; height: 16px; margin-right: -10px; border: 2px solid #0af33; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+    #statusContainer { display: flex; flex-direction: column; align-items: flex-start; color: #00ffee; font-size: 0.9em; }
+    .spinner { width: 16px; height: 16px; margin-bottom: 2px; border: 2px solid #0af33; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     #controlsRow { display: flex; gap: 7px; align-items: center; }
     #btnCountry { width: 36px; height: 36px; background: #007bff; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    #btnPing { width: 36px; height: 36px; background: #3e3e3e; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1em; padding:0; }
+    #btnPing { width: 36px; height: 36px; background: #474747; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1em; padding:0; }
     #btnPing span { line-height: 1em; }
     #filterInput { flex: 1; height: 36px; padding: 0 10px; font-size: 14px; border: 3px solid #007bff; border-radius: 5px; background: #1e1e1e; color: #eee; box-sizing: border-box; }
     #btnFilter { background: #007bff; color: #fff; border: none; border-radius: 5px; padding: 0 15px; font-size: 14px; cursor: pointer; height: 36px; }
 
-    #countryPopup { position: absolute; top: 96px; left: 10; width: 59vw; max-width: calc(100% - 20px); height: calc(100vh - 210px); background: #1e1e1e; border: 3px solid #007bff; border-radius: 5px; overflow: hidden; display: none; box-sizing: border-box; z-index:100; }
+    #countryPopup { position: absolute; top: 96px; left: 10px; width: 59vw; max-width: calc(100% - 20px); height: calc(100vh - 210px); background: #1e1e1e; border: 3px solid #007bff; border-radius: 5px; overflow: hidden; display: none; box-sizing: border-box; z-index:100; }
     #countryPopup .search-container { position: sticky; top: 0; background: #1e1e1e; padding: 10px; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     #countryPopup .search-container input { width: calc(100% - 20px); padding: 6px 10px; font-size: 14px; border: 2px solid #007bff; border-radius: 4px; background: #2a2a2a; color: #eee; box-sizing: border-box; }
     #countryPopup .country-list { height: calc(100% - 56px); overflow-y: auto; }
@@ -64,24 +63,26 @@
   <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
 </head>
 <body>
-  <h2>V2RAY Converter V15</h2>
+	
+<h1 style="font-size: 15px; text-align: center; margin-top: -8px">V2RAY Converter</h1>
+<h1 style="font-size: 11px; text-align: center; margin-bottom:  10px; margin-top: -3px;">(Vmess Vless Trojan Shadowsocks Wireguard Hysteria)</h1>
 
   <div id="filterRow">
     <div id="geoRow">
       <input type="checkbox" id="ipGeoToggle">
       <label for="ipGeoToggle" id="ipGeoLabel">GeoIP</label>
-      <input id="geoServiceInput" type="text" placeholder="https://ipwhois.app/json/{ip}" >
+      <input id="geoServiceInput" type="text" placeholder="https://ipwhois.app/json/{ip}" value="https://ipwhois.app/json/{ip}">
       <div id="statusContainer">
         <div class="spinner" id="spinner"></div>
         <span id="processStatus"></span>
       </div>
     </div>
     <div class="label">
-      <span>Страны</span><span style="margin-left:60px;">Фильтр результата</span>
+      <span>Страны</span><span style="margin-left:60px;">Фильтр поиска/ URL-Sub</span>
       <div id="controlsRow">
         <button id="btnCountry">🌎</button>
         <button id="btnPing"><span>pi<br>ng</span></button>
-        <input id="filterInput" placeholder="ключевой текст или флаг..." />
+        <input id="filterInput" placeholder="ключевой текст/флаг/URL" />
         <button id="btnFilter">ок</button>
       </div>
       <div id="countryPopup"></div>
@@ -89,8 +90,14 @@
   </div>
 
   <div class="container">
-    <div><div class="label">Исходный JSON, URL, текст</div><textarea id="inputConfig" placeholder="Вставь json, url, текст..."></textarea></div>
-    <div><div class="label">Результат</div><textarea id="outputResult" placeholder="Результат..."></textarea></div>
+    <div>
+      <div class="label">Исходный JSON, URL, текст</div>
+      <textarea id="inputConfig" placeholder="Вставь json, url, текст..."></textarea>
+    </div>
+    <div>
+      <div class="label">Результат</div>
+      <textarea id="outputResult" placeholder="Результат..."></textarea>
+    </div>
     <div class="buttons-row">
       <div class="buttons-left">
         <button id="btnConvert">json → url</button>
@@ -103,15 +110,16 @@
         <button id="btnLoadFile">загрузить файл</button>
       </div>
     </div>
-    <div class="clear-row"><button id="btnClear">очистить</button></div>
+    <div class="clear-row">
+      <button id="btnClear">очистить</button>
+    </div>
   </div>
 
   <input type="file" id="fileInput" accept=".txt,.json,.yaml,.yml">
   <a id="hiddenDownloadLink" style="display:none;"></a>
 
   <script>
-    
- const countries = [
+    const countries = [
   { flag: '🌎', name: 'OFF' },
   { flag: '🇦🇫', name: 'AFGHANISTAN' },
   { flag: '🇦🇽', name: 'ALAND ISLAND' },
@@ -356,6 +364,7 @@
   { flag: '🇿🇲', name: 'ZAMBIA' },
    { flag: '🇳🇿', name: 'ZEALAND NEW' },
   { flag: '🇿🇼', name: 'ZIMBABWE' },
+
 ];
 
     function extractAllJSON(text) {
@@ -386,38 +395,194 @@
       return `${tpl}/${host}`;
     }
 
+    function buildURLFromOutbound(o, remarks, urls) {
+      const proto = o.protocol;
+      const tag = encodeURIComponent(remarks || o.tag || proto);
+      const p = new URLSearchParams();
+      let base = '';
+      if (proto === 'shadowsocks') {
+        (o.settings.servers || []).forEach(s => {
+          const a = btoa(`${s.method}:${s.password}`).replace(/=+$/, '');
+          urls.push(`ss://${a}@${s.address}:${s.port}#${tag}`);
+        });
+        return;
+      }
+      if (proto === 'vmess' || proto === 'vless') {
+        const v = o.settings.vnext?.[0], u = v?.users?.[0];
+        if (v && u) {
+          base = `${proto}://${u.id}@${v.address}:${v.port}`;
+          p.set('encryption', u.encryption || u.security || (proto === 'vmess' ? 'auto' : 'none'));
+          if (u.flow) p.set('flow', u.flow);
+        }
+      }
+      if (proto === 'trojan') {
+        const s = o.settings.servers?.[0];
+        if (s) base = `trojan://${encodeURIComponent(s.password)}@${s.address}:${s.port}`;
+      }
+      if (proto === 'wireguard') {
+        const s = o.settings, peer = s.peers?.[0];
+        if (s && peer) {
+          base = `wireguard://${encodeURIComponent(s.secretKey)}@${peer.endpoint}`;
+          p.set('address', encodeURIComponent(s.address?.[0] || ''));
+          p.set('presharedkey', encodeURIComponent(peer.preSharedKey || ''));
+          p.set('publickey', encodeURIComponent(peer.publicKey || ''));
+          p.set('mtu', s.mtu || 1420);
+          p.set('reserved', '0,0,0');
+        }
+      }
+      if (!base) return;
+      const s = o.streamSettings || {};
+      const tls = s.tlsSettings || {};
+      const rel = s.realitySettings || {};
+      if (s.security) p.set('security', s.security);
+      if (tls.allowInsecure) p.set('allowInsecure', '1');
+      if (Array.isArray(tls.alpn)) p.set('alpn', tls.alpn.join(','));
+      if (tls.serverName) p.set('sni', tls.serverName);
+      else if (rel.serverName) p.set('sni', rel.serverName);
+      if (tls.fingerprint) p.set('fp', tls.fingerprint);
+      if (rel.publicKey) p.set('pbk', rel.publicKey);
+      if (rel.shortId) p.set('sid', rel.shortId);
+      if (s.grpcSettings?.serviceName) p.set('serviceName', s.grpcSettings.serviceName);
+      if (s.kcpSettings?.seed) p.set('seed', s.kcpSettings.seed);
+      let net = s.network || (s.wsSettings ? 'ws' : s.httpupgradeSettings ? 'httpupgrade' : s.splithttpSettings ? 'splithttp' : s.httpSettings ? 'http' : 'tcp');
+      if (net === 'splithttp') net = 'xhttp';
+      p.set('type', net);
+      let host = '', path = '';
+      if (net === 'ws' && s.wsSettings) {
+        host = s.wsSettings.headers?.Host || '';
+        path = s.wsSettings.path || '';
+      } else if (net === 'xhttp' && s.splithttpSettings) {
+        host = s.splithttpSettings.host || '';
+        path = s.splithttpSettings.path || '';
+      } else if ((net === 'http' || net === 'xhttp' || net === 'httpupgrade') && s[net + 'Settings']) {
+        const cfg = s[net + 'Settings'];
+        host = Array.isArray(cfg.host) ? cfg.host[0] : cfg.host || '';
+        path = cfg.path || '';
+      } else if (net === 'tcp' && s.tcpSettings?.header?.type === 'http') {
+        const rq = s.tcpSettings.header.request;
+        host = (rq.headers?.Host || [''])[0] || '';
+        path = (rq.path || [''])[0] || '';
+        p.set('headerType', 'http');
+      }
+      if (host) p.set('host', host);
+      if (path) p.set('path', path);
+      urls.push(`${base}?${p.toString()}#${tag}`);
+    }
+
+    function handleSpecialJunkConfig(obj, urls) {
+      if (!obj.config || typeof obj.config !== 'string') return false;
+      try {
+        const cfg = JSON.parse(obj.config);
+        const rootAddress = obj.address || '';
+        const rootId = obj.server_id || '';
+        if (Array.isArray(cfg.outbounds)) {
+          cfg.outbounds.forEach(o => {
+            if (o.settings?.vnext?.[0] && !o.settings.vnext[0].address && rootAddress) {
+              o.settings.vnext[0].address = rootAddress;
+            }
+            if (o.settings?.vnext?.[0]?.users?.[0] && !o.settings.vnext[0].users[0].id && rootId) {
+              o.settings.vnext[0].users[0].id = rootId;
+            }
+            if (o.streamSettings?.realitySettings && cfg.outbounds[0].streamSettings?.realitySettings?.spiderX) {
+              o.streamSettings.realitySettings.spiderX = cfg.outbounds[0].streamSettings.realitySettings.spiderX;
+            }
+            buildURLFromOutbound(o, obj.remarks, urls);
+          });
+          return true;
+        }
+      } catch {}
+      return false;
+    }
+
+    function handleJunkConfig(obj, urls) {
+      if (obj.configType === 'SHADOWSOCKS' && obj.method && obj.password && obj.server && obj.serverPort) {
+        const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, '');
+        const tag = encodeURIComponent(obj.remarks || '');
+        urls.push(`ss://${a}@${obj.server}:${obj.serverPort}#${tag}`);
+        return true;
+      }
+      if (obj.configType === 'VLESS' && obj.password && obj.server && obj.serverPort) {
+        const params = new URLSearchParams();
+        params.set('encryption', obj.method || 'none');
+        params.set('security', obj.security || '');
+        if (obj.flow) params.set('flow', obj.flow);
+        if (obj.network) params.set('type', obj.network);
+        if (obj.headerType) params.set('headerType', obj.headerType);
+        if (obj.host) params.set('host', obj.host);
+        if (obj.path) params.set('path', obj.path);
+        if (obj.sni) params.set('sni', obj.sni);
+        if (obj.fingerPrint) params.set('fp', obj.fingerPrint);
+        if (obj.alpn) params.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
+        if (obj.publicKey) params.set('pbk', obj.publicKey);
+        if (obj.shortId) params.set('sid', obj.shortId);
+        if (obj.allowInsecure !== undefined) params.set('allowInsecure', obj.allowInsecure ? '1' : '0');
+        const tag = encodeURIComponent(obj.remarks || '');
+        urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${params.toString()}#${tag}`);
+        return true;
+      }
+      return false;
+    }
+
+    function decodeVmessBase64(line) {
+      try {
+        const b64 = line.replace(/^vmess:\/\//, '').trim();
+        const json = JSON.parse(atob(b64));
+        const ps = encodeURIComponent(json.ps || '');
+        const add = json.add, port = json.port, id = json.id;
+        const params = new URLSearchParams();
+        if (json.security) params.set('security', json.security);
+        if (json.encryption) params.set('encryption', json.encryption);
+        if (json.net) params.set('type', json.net);
+        if (json.type) params.set('headerType', json.type);
+        if (json.host) params.set('host', json.host);
+        if (json.path) params.set('path', json.path);
+        if (json.sni) params.set('sni', json.sni);
+        if (json.fingerprint) params.set('fp', json.fingerprint);
+        if (json.alpn) params.set('alpn', Array.isArray(json.alpn) ? json.alpn.join(',') : json.alpn);
+        if (json.flow) params.set('flow', json.flow);
+        if (json.pbk) params.set('pbk', json.pbk);
+        if (json.sid) params.set('sid', json.sid);
+        if (json.seed) params.set('seed', json.seed);
+        if (json.serviceName) params.set('serviceName', json.serviceName);
+        if (json.allowInsecure) params.set('allowInsecure', json.allowInsecure ? '1' : '0');
+        return `vmess://${id}@${add}:${port}${params.toString() ? '?' + params.toString() : ''}#${ps}`;
+      } catch {
+        return line;
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const inEl = document.getElementById('inputConfig'),
             outEl = document.getElementById('outputResult'),
-            fileInput = document.getElementById('fileInput'),
             filterInput = document.getElementById('filterInput'),
             btnFilter = document.getElementById('btnFilter'),
+            ipGeoToggle = document.getElementById('ipGeoToggle'),
+            spinner = document.getElementById('spinner'),
+            statusEl = document.getElementById('processStatus'),
             btnCountry = document.getElementById('btnCountry'),
             btnPing = document.getElementById('btnPing'),
             countryPopup = document.getElementById('countryPopup'),
-            ipGeoToggle = document.getElementById('ipGeoToggle'),
-            spinner = document.getElementById('spinner'),
-            statusEl = document.getElementById('processStatus');
-      let selectedCountry = 'OFF', pinging = false, controllers = [], resultsPing = [];
-      let searchEl, listEl;
+            fileInput = document.getElementById('fileInput'),
+            hiddenDownloadLink = document.getElementById('hiddenDownloadLink');
+
+      let selectedCountry = 'OFF';
 
       function initCountryPopup() {
         countryPopup.innerHTML = '';
         const container = document.createElement('div');
         container.className = 'search-container';
-        searchEl = document.createElement('input');
+        const searchEl = document.createElement('input');
         searchEl.type = 'text';
         searchEl.placeholder = 'Поиск…';
         container.appendChild(searchEl);
         countryPopup.appendChild(container);
-        listEl = document.createElement('div');
+        const listEl = document.createElement('div');
         listEl.className = 'country-list';
         countryPopup.appendChild(listEl);
-        searchEl.addEventListener('input', () => filterCountries(searchEl.value));
-        filterCountries('');
+        searchEl.addEventListener('input', () => filterCountries(searchEl.value, listEl));
+        filterCountries('', listEl);
       }
-
-      function filterCountries(term) {
+      function filterCountries(term, listEl) {
         const lower = term.toLowerCase();
         listEl.innerHTML = '';
         countries.forEach(c => {
@@ -431,54 +596,31 @@
               selectedCountry = c.flag;
               btnCountry.textContent = c.flag;
               countryPopup.style.display = 'none';
-              searchEl.value = '';
             };
             listEl.appendChild(item);
           }
         });
       }
-
       btnCountry.addEventListener('click', e => {
         e.stopPropagation();
-        if (countryPopup.style.display === 'block') {
-          countryPopup.style.display = 'none';
-          if (searchEl) {
-            searchEl.value = '';
-            filterCountries('');
-          }
-        } else {
-          if (!searchEl) initCountryPopup();
-          searchEl.value = '';
-          filterCountries('');
-          countryPopup.style.display = 'block';
-          searchEl.focus();
-        }
+        countryPopup.style.display = countryPopup.style.display === 'block' ? 'none' : 'block';
+        if (countryPopup.style.display === 'block') initCountryPopup();
       });
-
       document.addEventListener('click', () => {
-        if (countryPopup.style.display === 'block') {
-          countryPopup.style.display = 'none';
-          if (searchEl) {
-            searchEl.value = '';
-            filterCountries('');
-          }
-        }
+        if (countryPopup.style.display === 'block') countryPopup.style.display = 'none';
       });
-
       countryPopup.addEventListener('click', e => e.stopPropagation());
 
-      function setStatus(txt, show = false) {
-        statusEl.textContent = txt;
-        spinner.style.display = show ? 'inline-block' : 'none';
+      function setStatus(html, spinning) {
+        statusEl.innerHTML = html;
+        spinner.style.display = spinning ? 'inline-block' : 'none';
       }
 
       async function pingHost(host) {
-        const controller = new AbortController();
-        controllers.push(controller);
         const timeoutMs = 5000, start = performance.now();
         try {
           await Promise.race([
-            fetch('http://' + host, { mode: 'no-cors', signal: controller.signal }),
+            fetch(`${location.protocol}//${host}`, { mode: 'no-cors' }),
             new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))
           ]);
           const duration = Math.round(performance.now() - start);
@@ -487,9 +629,9 @@
           return { host, time: Infinity, status: '❌ тайм-аут' };
         }
       }
-
+      let pinging = false, resultsPing = [];
       async function pingAll() {
-        pinging = true; controllers = []; resultsPing = [];
+        pinging = true; resultsPing = [];
         const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length;
         for (let i = 0; i < total; i++) {
           if (!pinging) break;
@@ -498,73 +640,125 @@
           catch { const m = lines[i].match(/\/\/([^\/:]+)/); host = m ? m[1] : lines[i]; }
           const res = await pingHost(host);
           resultsPing.push({ original: lines[i], ...res });
-          setStatus(`пинг… ${Math.round(resultsPing.length / total * 100)}%`, true);
+          setStatus(`пинг… ${Math.round(resultsPing.length/total*100)}%`, true);
           const sorted = resultsPing.slice().sort((a, b) => a.time - b.time);
           outEl.value = sorted.map(r => `${r.original} ${r.status}`).join('\n');
         }
         setStatus('готово!', false); pinging = false;
       }
+      btnPing.onclick = () => pinging ? (pinging = false, setStatus('', false)) : pingAll();
 
-      function cancelPing() {
-        pinging = false; controllers.forEach(c => c.abort()); setStatus('', false);
+      document.getElementById('btnFilter').onclick = async () => {
+  const raw = inEl.value.trim();
+  const filterVal = filterInput.value.trim();
+
+  // ► 1) Если в строке фильтра указан URL(ы) – сначала скачиваем
+  if (/^https?:\/\//.test(filterVal)) {
+    const urls = filterVal.split(/\s+/);
+    const downloaded = [];
+    btnFilter.disabled = true;
+    setStatus('загрузка...<br>0%', true);
+
+    for (let i = 0; i < urls.length; i++) {
+      let txt = '';
+      try {
+        const resp = await fetch(urls[i]);
+        txt = resp.ok ? await resp.text() : '';
+      } catch {
+        // fallback через allorigins
+        const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(urls[i]);
+        const resp2 = await fetch(proxy);
+        txt = resp2.ok ? await resp2.text() : '';
+      }
+      // если текст – base64, декодируем
+      const b64 = txt.trim().replace(/\s+/g, '');
+      if (/^[A-Za-z0-9+/=]+$/.test(b64) && b64.length % 4 === 0) {
+        try { txt = atob(b64); } catch {}
+      }
+      downloaded.push(txt);
+      setStatus(`загрузка...<br>${Math.round((i+1)/urls.length*100)}%`, true);
+    }
+    inEl.value = downloaded.join('\n');
+    setStatus('готово!', false);
+    btnFilter.disabled = false;
+    return;
+  }
+
+  // ► 2) OVERRIDE только для INI-WireGuard → чистый URL и выход
+  if (raw.startsWith('[Interface]')) {
+    const iniLines = raw.split('\n').map(line => {
+      const [k,v=''] = line.split('=').map(s => s.trim());
+      return [k, v];
+    });
+    const get = key => (iniLines.find(l => l[0]===key)||[])[1]||'';
+    const [ host, port ] = get('Endpoint').split(':');
+    const priv = encodeURIComponent(get('PrivateKey'));
+    const pub  = encodeURIComponent(get('PublicKey').replace(/=+$/,''));
+    const psk  = encodeURIComponent(get('PreSharedKey').replace(/=+$/,''));
+    const addr = encodeURIComponent(get('Address'));
+    const mtu  = parseInt(get('MTU'),10) || 1420;
+    const params = [`address=${addr}`, `presharedkey=${psk}`, `publickey=${pub}`, `mtu=${mtu}`, `reserved=0,0,0`].join('&');
+    outEl.value = `wireguard://${priv}@${host}:${port}?${params}`;
+    setStatus('готово!', false);
+    return;
+  }
+
+  // ► 3) Дальше – общая ветка GeoIP/фильтрации (включая готовые wireguard://…)
+  btnFilter.disabled = true;
+  setStatus('запуск...<br>0%', true);
+
+  const rawLines = inEl.value.split(/\r?\n/).filter(Boolean);
+  const results = [];
+
+  if (ipGeoToggle.checked) {
+    const seen = {};
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+      let host;
+      try { host = new URL(line).hostname; }
+      catch { host = (line.match(/\/\/([^\/:]+)/)||[])[1] || line; }
+
+      if (!seen[host]) {
+        try {
+          const res = await fetch(buildGeoUrl(host));
+          const d = await res.json();
+          const code = d.country_code || d.countryCode || '';
+          const name = d.country_name || d.countryName || host;
+          seen[host] = code ? `${countryCodeToFlag(code)} ${name}` : host;
+        } catch {
+          seen[host] = host;
+        }
       }
 
-      btnPing.onclick = () => pinging ? cancelPing() : pingAll();
+      results.push(`${line.split('#')[0]}#${seen[host]}`);
+      setStatus(`обработка...<br>${Math.round((i+1)/rawLines.length*100)}%`, true);
+    }
 
-      btnFilter.onclick = async () => {
-        const lines = inEl.value.split(/\r?\n/).filter(Boolean), total = lines.length, results = [];
-        setStatus('запуск...', true);
-        if (ipGeoToggle.checked) {
-          const seen = {};
-          for (let i = 0; i < total; i++) {
-            let host;
-            try { host = new URL(lines[i]).hostname; }
-            catch { const m = lines[i].match(/\/\/([^\/:]+)/); host = m ? m[1] : lines[i]; }
-            if (!seen[host]) {
-              try {
-                const d = await (await fetch(buildGeoUrl(host))).json();
-                const code = d.country_code || d.countryCode || d.code || d.geoplugin_countryCode || d.country;
-                const name = d.country_name || d.countryName || d.geoplugin_countryName || d.country || host;
-                seen[host] = code ? `${countryCodeToFlag(code)} ${name}` : host;
-              } catch { seen[host] = host; }
-            }
-            results.push(`${lines[i].split('#')[0]}#${seen[host]}`);
-            setStatus(`обработка (${Math.round((i + 1) / total * 100)}%)...`, true);
-          }
-        } else {
-          for (let i = 0; i < total; i++) {
-            let dec;
-            try { dec = decodeURIComponent(lines[i]); } catch { dec = lines[i]; }
-            const term = filterInput.value.trim().toLowerCase();
-            const okText = !term || dec.toLowerCase().includes(term) || lines[i].toLowerCase().includes(term);
-            const okCountry = selectedCountry === 'OFF' || dec.includes(selectedCountry) || lines[i].includes(selectedCountry);
-            if (okText && okCountry) results.push(dec);
-            setStatus(`обработка (${Math.round((i + 1) / total * 100)}%)...`, true);
-          }
-        }
-        outEl.value = results.join('\n'); setStatus('готово!', false);
-      };
+  } else {
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i].trim();
+      let decoded;
+      try { decoded = decodeURIComponent(line); }
+      catch { decoded = line; }
 
-      document.getElementById('btnLoadFile').onclick = () => fileInput.click();
-      fileInput.onchange = e => {
-        const fr = new FileReader();
-        fr.onload = () => inEl.value = fr.result;
-        fr.readAsText(e.target.files[0]);
-      };
-      document.getElementById('btnClear').onclick = () => { inEl.value = ''; outEl.value = ''; };
-      document.getElementById('btnCopy').onclick = async () => { await navigator.clipboard.writeText(outEl.value); alert('Скопировано!'); };
-      document.getElementById('btnDownload').onclick = () => {
-        const d = outEl.value.trim(); if (!d) return alert('Нет данных');
-        const link = document.getElementById('hiddenDownloadLink');
-        link.href = URL.createObjectURL(new Blob([d], { type: 'text/plain' }));
-        link.download = 'result.txt'; link.click();
-        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-      };
-      document.getElementById('btnTextBase64').onclick = () => {
-        const t = inEl.value.trim(); if (!t) { outEl.value = 'отсутствует текст'; return; }
-        try { outEl.value = decodeURIComponent(escape(atob(t))); }
-        catch { outEl.value = btoa(unescape(encodeURIComponent(t))); }
-      };
+      const term      = filterVal.toLowerCase();
+      const okText    = !term || decoded.toLowerCase().includes(term) || line.toLowerCase().includes(term);
+      const okCountry = selectedCountry === 'OFF'
+        || decoded.includes(selectedCountry)
+        || line.includes(selectedCountry);
+
+      if (okText && okCountry) {
+        results.push(decoded);
+      }
+      setStatus(`обработка...<br>${Math.round((i+1)/rawLines.length*100)}%`, true);
+    }
+  }
+
+  outEl.value = results.join('\n');
+  setStatus('готово!', false);
+  btnFilter.disabled = false;
+};
+
       document.getElementById('btnConvert').onclick = () => {
         let raw = inEl.value;
         const f = raw.indexOf('{'), l = raw.lastIndexOf('}');
@@ -572,24 +766,20 @@
         if (!raw.trim()) { outEl.value = 'отсутствует json'; return; }
         const objs = extractAllJSON(raw), urls = [];
         objs.forEach(obj => {
+          if (handleSpecialJunkConfig(obj, urls)) return;
+          if (handleJunkConfig(obj, urls)) return;
           if (obj.configType === 'VLESS' && obj.customConfig && obj.password && obj.server) {
-            buildURLFromLegacy(obj, urls);
-            return;
+            buildURLFromLegacy(obj, urls); return;
           }
-          if (obj.outboundBean) {
-            buildURLsFromOutboundBean(obj, urls);
-            return;
-          }
+          if (obj.outboundBean) { buildURLsFromOutboundBean(obj, urls); return; }
           if (obj.custom_json && Array.isArray(obj.custom_json.outbounds)) {
-            obj.custom_json.outbounds.forEach(o => buildURLFromOutbound(o, obj.remarks, urls));
-            return
+            obj.custom_json.outbounds.forEach(o => buildURLFromOutbound(o, obj.remarks, urls)); return;
           }
           if (obj.server && obj.method && obj.password && obj.server_port) {
             const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, '');
             let u = `ss://${a}@${obj.server}:${obj.server_port}`;
             if (obj.remarks) u += `#${encodeURIComponent(obj.remarks)}`;
-            urls.push(u);
-            return;
+            urls.push(u); return;
           }
           if (obj.configType === 'VLESS' && obj.security === 'reality' && obj.server) {
             const p = new URLSearchParams();
@@ -611,6 +801,7 @@
         });
         outEl.value = urls.join('\n');
       };
+
       document.getElementById('btnConvertBack').onclick = () => {
         if (!inEl.value.trim()) { outEl.value = 'отсутствует url'; return; }
         const lines = inEl.value.trim().split(/\r?\n/).filter(Boolean), arr = [];
@@ -622,7 +813,11 @@
             const [method, password] = atob(auth).split(':');
             const [address, portStr] = hp.split(':');
             const port = parseInt(portStr, 10);
-            arr.push({ protocol: 'shadowsocks', tag, settings: { servers: [{ address, port: isNaN(port) ? 0 : port, method, password }] }, streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} } });
+            arr.push({
+              protocol: 'shadowsocks', tag,
+              settings: { servers: [{ address, port: isNaN(port) ? 0 : port, method, password }] },
+              streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} }
+            });
           } else {
             try {
               const u = new URL(line), p = u.searchParams, proto = u.protocol.slice(0, -1);
@@ -631,21 +826,46 @@
               const h = p.get('host') || '', path = p.get('path') || '';
               const ssConf = {
                 network: typeParam === 'xhttp' ? 'splithttp' : typeParam,
-                security: p.get('security') || '',
-                packetEncoding: p.get('packetEncoding') || '',
-                tlsSettings: { serverName: p.get('sni') || '', fingerprint: p.get('fp') || '', allowInsecure: p.get('allowInsecure') === '1', alpn: p.get('alpn') ? p.get('alpn').split(',') : [] },
+                security: p.get('security') || '', packetEncoding: p.get('packetEncoding') || '',
+                tlsSettings: {
+                  serverName: p.get('sni') || '', fingerprint: p.get('fp') || '',
+                  allowInsecure: p.get('allowInsecure') === '1',
+                  alpn: p.get('alpn') ? p.get('alpn').split(',') : []
+                },
                 realitySettings: { publicKey: p.get('pbk') || '', shortId: p.get('sid') || '', serverName: p.get('sni') || '' },
                 kcpSettings: { seed: p.get('seed') || '' },
                 grpcSettings: { serviceName: p.get('serviceName') || '' }
               };
-              if (headerType === 'http' && ssConf.network === 'tcp') ssConf.tcpSettings = { header: { type: 'http', request: { headers: { Host: [h] }, path: [path] } } };
-              else if (p.get('type') === 'http') ssConf.httpSettings = { host: [h], path };
-              else if (ssConf.network === 'splithttp') ssConf.splithttpSettings = { host: h, path }, ssConf.xhttpSettings = { host: h, path };
-              else if (ssConf.network === 'httpupgrade') ssConf.httpupgradeSettings = { host: h, path };
-              else if (ssConf.network === 'ws' && h) ssConf.wsSettings = { headers: { Host: h }, path };
-              if (proto === 'vless') arr.push({ protocol: 'vless', tag, settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, encryption: p.get('encryption') || 'none', flow: p.get('flow') || '' }] }] }, streamSettings: ssConf });
-              if (proto === 'vmess') arr.push({ protocol: 'vmess', tag, settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, security: p.get('encryption') || 'auto' }] }] }, streamSettings: ssConf });
-              if (proto === 'trojan') arr.push({ protocol: 'trojan', tag, settings: { servers: [{ address: u.hostname, port: +u.port, password: decodeURIComponent(u.username) }] }, streamSettings: ssConf });
+              if (headerType === 'http' && ssConf.network === 'tcp')
+                ssConf.tcpSettings = { header: { type: 'http', request: { headers: { Host: [h] }, path: [path] } } };
+              else if (p.get('type') === 'http')
+                ssConf.httpSettings = { host: [h], path };
+              else if (ssConf.network === 'splithttp')
+                ssConf.splithttpSettings = { host: h, path }, ssConf.xhttpSettings = { host: h, path };
+              else if (ssConf.network === 'httpupgrade')
+                ssConf.httpupgradeSettings = { host: h, path };
+              else if (ssConf.network === 'ws' && h)
+                ssConf.wsSettings = { headers: { Host: h }, path };
+              if (proto === 'vless')
+                arr.push({
+                  protocol: 'vless', tag,
+                  settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, encryption: p.get('encryption') || 'none', flow: p.get('flow') || '' }] }] },
+                  streamSettings: ssConf
+                });
+              if (proto === 'vmess')
+                arr.push({
+                  protocol: 'vmess', tag,
+                  settings: { vnext: [{ address: u.hostname, port: +u.port, users: [{ id: u.username, security: p.get('encryption') || 'auto' }] }] },
+                  streamSettings: ssConf
+                });
+              if (proto === 'trojan') {
+                if (!ssConf.network) ssConf.network = 'tcp';
+                arr.push({
+                  protocol: 'trojan', tag,
+                  settings: { servers: [{ address: u.hostname, port: +u.port, password: decodeURIComponent(u.username) }] },
+                  streamSettings: ssConf
+                });
+              }
             } catch {}
           }
         });
@@ -665,7 +885,6 @@
         outEl.value = JSON.stringify(conf, null, 2);
       };
 
-      // Функции сборки URL остаются без изменений
       function buildURLFromLegacy(o, urls) {
         const p = new URLSearchParams();
         p.set('security', o.method || 'none');
@@ -684,68 +903,422 @@
         const base = `vless://${o.password}@${o.server}:${o.serverPort}`;
         urls.push(`${base}?${p.toString()}#${tag}`);
       }
+
       function buildURLsFromOutboundBean(obj, urls) {
         buildURLFromOutbound(obj.outboundBean, obj.remarks, urls);
       }
-      function buildURLFromOutbound(o, remarks, urls) {
-        const proto = o.protocol, tag = encodeURIComponent(remarks || o.tag || proto), p = new URLSearchParams();
-        let base = '';
-        if (proto === 'shadowsocks') {
-          (o.settings.servers || []).forEach(s => {
-            const a = btoa(`${s.method}:${s.password}`).replace(/=+$/, '');
-            urls.push(`ss://${a}@${s.address}:${s.port}#${tag}`);
-          });
+
+      document.getElementById('btnTextBase64').onclick = () => {
+        const t = document.getElementById('inputConfig').value.trim();
+        if (!t) { document.getElementById('outputResult').value = 'отсутствует текст'; return; }
+        try { document.getElementById('outputResult').value = decodeURIComponent(escape(atob(t))); }
+        catch { document.getElementById('outputResult').value = btoa(unescape(encodeURIComponent(t))); }
+      };
+
+      document.getElementById('btnCopy').onclick = () => {
+        const text = document.getElementById('outputResult').value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => alert('Скопировано!')).catch(fallback);
+        } else fallback();
+        function fallback() {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.setAttribute('wrap', 'off');
+          ta.style.position = 'absolute'; ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select(); ta.setSelectionRange(0, ta.value.length);
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          alert('Скопировано!');
+        }
+      };
+
+      document.getElementById('btnDownload').onclick = () => {
+        const d = document.getElementById('outputResult').value.trim();
+        if (!d) return alert('Нет данных');
+        const link = document.getElementById('hiddenDownloadLink');
+        link.href = URL.createObjectURL(new Blob([d], { type: 'text/plain' }));
+        link.download = 'result.txt'; link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      };
+
+      document.getElementById('btnLoadFile').onclick = () => document.getElementById('fileInput').click();
+      document.getElementById('fileInput').onchange = e => {
+        const fr = new FileReader();
+        fr.onload = () => document.getElementById('inputConfig').value = fr.result;
+        fr.readAsText(e.target.files[0]);
+      };
+
+      document.getElementById('btnClear').onclick = () => {
+        document.getElementById('inputConfig').value = '';
+        document.getElementById('outputResult').value = '';
+      };
+      // === Override-конвертер: WireGuard и Hysteria2 первыми ===
+  // Сохраняем оригинальные обработчики
+  const _origConvert    = document.getElementById('btnConvert').onclick;
+  const _origConvertBack = document.getElementById('btnConvertBack').onclick;
+
+  // Новый JSON→URL
+  document.getElementById('btnConvert').onclick = () => {
+    const raw = inEl.value.trim();
+    // Hysteria2
+    try {
+      const obj = JSON.parse(raw);
+      if (Array.isArray(obj.outbounds)) {
+        const h = obj.outbounds.find(o => o.protocol === 'hysteria2');
+        if (h) {
+          const srv = h.settings.servers[0],
+                pwd = h.streamSettings.hy2Settings.password,
+                addr= srv.address, prt = srv.port,
+                ins = h.streamSettings.tlsSettings.allowInsecure ? '1' : '0',
+                sni = encodeURIComponent(h.streamSettings.tlsSettings.serverName||''),
+                tag = encodeURIComponent(obj.remarks||h.tag||'');
+          outEl.value = `hysteria2://${encodeURIComponent(pwd)}@${addr}:${prt}/?insecure=${ins}&sni=${sni}#${tag}`;
           return;
         }
-        if (proto === 'vmess' || proto === 'vless') {
-          const v = o.settings.vnext?.[0], u = v?.users?.[0];
-          if (v && u) {
-            base = `${proto}://${u.id}@${v.address}:${v.port}`;
-            p.set('encryption', u.encryption || u.security || (proto === 'vmess' ? 'auto' : 'none'));
-            if (u.flow) p.set('flow', u.flow);
-          }
-        }
-        if (proto === 'trojan') {
-          const s = o.settings.servers?.[0];
-          if (s) base = `trojan://${encodeURIComponent(s.password)}@${s.address}:${s.port}`;
-        }
-        if (!base) return;
-        const s = o.streamSettings || {}, tls = s.tlsSettings || {}, rel = s.realitySettings || {};
-        if (s.security) p.set('security', s.security);
-        if (tls.allowInsecure) p.set('allowInsecure', '1');
-        if (Array.isArray(tls.alpn)) p.set('alpn', tls.alpn.join(','));
-        if (tls.serverName) p.set('sni', tls.serverName);
-        else if (rel.serverName) p.set('sni', rel.serverName);
-        if (tls.fingerprint) p.set('fp', tls.fingerprint);
-        if (rel.publicKey) p.set('pbk', rel.publicKey);
-        if (rel.shortId) p.set('sid', rel.shortId);
-        if (s.grpcSettings?.serviceName) p.set('serviceName', s.grpcSettings.serviceName);
-        if (s.kcpSettings?.seed) p.set('seed', s.kcpSettings.seed);
-        let net = s.network || (s.wsSettings ? 'ws' : s.httpupgradeSettings ? 'httpupgrade' : s.splithttpSettings ? 'splithttp' : s.httpSettings ? 'http' : 'tcp');
-        if (net === 'splithttp') net = 'xhttp';
-        p.set('type', net);
-        let host = '', path = '';
-        if (net === 'ws' && s.wsSettings) {
-          host = s.wsSettings.headers?.Host || '';
-          path = s.wsSettings.path || '';
-        } else if (net === 'xhttp' && s.splithttpSettings) {
-          host = s.splithttpSettings.host || '';
-          path = s.splithttpSettings.path || '';
-        } else if ((net === 'http' || net === 'xhttp' || net === 'httpupgrade') && s[net + 'Settings']) {
-          const cfg = s[net + 'Settings'];
-          host = Array.isArray(cfg.host) ? cfg.host[0] : cfg.host || '';
-          path = cfg.path || '';
-        } else if (net === 'tcp' && s.tcpSettings?.header?.type === 'http') {
-          const rq = s.tcpSettings.header.request;
-          host = (rq.headers?.Host || [''])[0] || '';
-          path = (rq.path || [''])[0] || '';
-          p.set('headerType', 'http');
-        }
-        if (host) p.set('host', host);
-        if (path) p.set('path', path);
-        urls.push(`${base}?${p.toString()}#${tag}`);
       }
+    } catch {}
+
+    // WireGuard INI→URL
+    if (raw.startsWith('[Interface]')) {
+      const lines = raw.split('\n').map(l=>l.split('=').map(s=>s.trim()));
+      const get = k=>lines.find(l=>l[0]===k)?.[1];
+      const settings = {
+        address:   [get('Address')],
+        mtu:       parseInt(get('MTU'),10),
+        secretKey: get('PrivateKey'),
+        peers: [{ endpoint: get('Endpoint'), publicKey: get('PublicKey'),
+                  preSharedKey: get('PreSharedKey'), keepAlive: parseInt(get('PersistentKeepalive'),10) }]
+      };
+      const peer = settings.peers[0],
+            [host, port] = peer.endpoint.split(':'),
+            priv = encodeURIComponent(settings.secretKey),
+            pub  = encodeURIComponent(peer.publicKey),
+            psk  = encodeURIComponent(peer.preSharedKey||''),
+            addr = encodeURIComponent(settings.address[0]),
+            mtu  = settings.mtu,
+            params = `address=${addr}&presharedkey=${psk}&publickey=${pub}&mtu=${mtu}&reserved=0,0,0`;
+      outEl.value = `wireguard://${priv}@${host}:${port}?${params}`;
+      return;
+    }
+
+    // Иначе штатная логика
+    _origConvert();
+  };
+
+  // Новый URL→JSON
+  document.getElementById('btnConvertBack').onclick = () => {
+    const raw = inEl.value.trim();
+
+    // wireguard:// → JSON
+    if (raw.startsWith('wireguard://')) {
+      try {
+        const u = new URL(raw),
+              priv = decodeURIComponent(u.username),
+              [host, port] = u.host.split(':'),
+              p = u.searchParams,
+              address = p.get('address'),
+              psk = decodeURIComponent(p.get('presharedkey')||''),
+              pub = decodeURIComponent(p.get('publickey')||''),
+              mtu = parseInt(p.get('mtu'),10),
+              tag = decodeURIComponent(u.hash.slice(1))||'wireguard';
+        const json = {
+          dns:{fallbackStrategy:"disabledIfAnyMatch",servers:[{address:"8.8.8.8",queryStrategy:"UseIP"}]},
+          inbounds:[
+            {listen:"0.0.0.0",port:10805,protocol:"socks",settings:{auth:"noauth",udp:true},tag:"socks"},
+            {listen:"0.0.0.0",port:1080,protocol:"http",settings:{allowTransparent:true},tag:"http"},
+            {listen:"0.0.0.0",port:10804,protocol:"dokodemo-door",settings:{address:"0.0.0.0",network:"tcp,udp",port:10804},tag:"dns-in"}
+          ],
+          log:{loglevel:"warning"},
+          outbounds:[
+            {
+              domainStrategy:"UseIPv4",protocol:"wireguard",
+              settings:{
+                address:[address],mtu,secretKey:priv,
+                peers:[{endpoint:`${host}:${port}`,publicKey:pub,preSharedKey:psk,keepAlive:0}]
+              },
+              tag
+            },
+            {protocol:"freedom",tag:"direct"},
+            {protocol:"freedom",tag:"bypass"},
+            {protocol:"blackhole",tag:"block"},
+            {protocol:"dns",proxySettings:{tag,transportLayer:true},settings:{userLevel:1},tag:"dns-out"}
+          ],
+          policy:{levels:{"1":{connIdle:30}},system:{statsOutboundDownlink:true,statsOutboundUplink:true}},
+          routing:{domainStrategy:"AsIs",rules:[
+            {inboundTag:["dns-in"],outboundTag:"dns-out",type:"field"},
+            {ip:[host],outboundTag:"direct",type:"field"}
+          ]},
+          stats:{}
+        };
+        outEl.value = JSON.stringify(json,null,2);
+      } catch(e) {
+        alert("Ошибка WireGuard→JSON: "+e);
+      }
+      return;
+    }
+
+    // hysteria2:// → JSON
+    if (raw.startsWith('hysteria2://')) {
+      const re = /^hysteria2:\/\/(.+?)@([^:/]+):(\d+)\/\?insecure=(\d+)&sni=(.+?)#/;
+      const m = raw.match(re);
+      if (!m) return alert('Неверный формат hysteria2 URL');
+      const [_, pwdEnc, addr, prtStr, inse, sniEnc] = m,
+            pwd = decodeURIComponent(pwdEnc),
+            port = parseInt(prtStr,10),
+            insecure = inse==='1',
+            sni = decodeURIComponent(sniEnc);
+      const json = {
+        dns:{fallbackStrategy:"disabledIfAnyMatch",servers:[{address:"8.8.8.8",queryStrategy:"UseIP"}]},
+        inbounds:[
+          {listen:"0.0.0.0",port:10805,protocol:"socks",settings:{auth:"noauth",udp:true},tag:"socks"},
+          {listen:"0.0.0.0",port:1080,protocol:"http",settings:{allowTransparent:true},tag:"http"},
+          {listen:"0.0.0.0",port:10804,protocol:"dokodemo-door",settings:{address:"0.0.0.0",network:"tcp,udp",port:10804},tag:"dns-in"}
+        ],
+        log:{loglevel:"warning"},
+        outbounds:[
+          {
+            domainStrategy:"AsIs",protocol:"hysteria2",
+            settings:{servers:[{address:addr,port}]},
+            streamSettings:{
+              network:"hysteria2",security:"tls",
+              tlsSettings:{allowInsecure:insecure,serverName:sni},
+              hy2Settings:{congestion:{down_mbps:0,up_mbps:0},password:pwd,use_udp_extension:true}
+            },
+            tag:"hysteria2"
+          },
+          {protocol:"freedom",tag:"direct"},
+          {protocol:"freedom",tag:"bypass"},
+          {protocol:"blackhole",tag:"block"},
+          {protocol:"dns",proxySettings:{tag:"hysteria2",transportLayer:true},settings:{userLevel:1},tag:"dns-out"}
+        ],
+        policy:{levels:{"1":{connIdle:30}},system:{statsOutboundDownlink:true,statsOutboundUplink:true}},
+        routing:{domainStrategy:"AsIs",rules:[
+          {inboundTag:["dns-in"],outboundTag:"dns-out",type:"field"},
+          {ip:[addr],outboundTag:"direct",type:"field"}
+        ]},
+        stats:{}
+      };
+      outEl.value = JSON.stringify(json,null,2);
+      return;
+    }
+
+    // Иначе штатный URL→JSON
+    _origConvertBack();
+  };
+  // === Конец override ===
     });
   </script>
+  <!-- В конец вашего index.html, сразу перед </body>, добавьте: -->
+<script>
+  function handleSpecialJunkConfig(obj, urls) {
+    if (!obj.config || typeof obj.config !== 'string') return false;
+    try {
+      const cfg = JSON.parse(obj.config);
+      const rootAddress = obj.address || '';
+      const rootId = obj.server_id || '';
+      if (Array.isArray(cfg.outbounds)) {
+        cfg.outbounds.forEach(o => {
+          if (o.settings?.vnext?.[0] && !o.settings.vnext[0].address && rootAddress) {
+            o.settings.vnext[0].address = rootAddress;
+          }
+          if (o.settings?.vnext?.[0]?.users?.[0] && !o.settings.vnext[0].users[0].id && rootId) {
+            o.settings.vnext[0].users[0].id = rootId;
+          }
+          if (o.streamSettings?.realitySettings && cfg.outbounds[0].streamSettings?.realitySettings?.spiderX) {
+            o.streamSettings.realitySettings.spiderX = cfg.outbounds[0].streamSettings.realitySettings.spiderX;
+          }
+          buildURLFromOutbound(o, obj.remarks, urls);
+        });
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  function handleJunkConfig(obj, urls) {
+    if (obj.configType === 'SHADOWSOCKS' && obj.method && obj.password && obj.server && obj.serverPort) {
+      const a = btoa(`${obj.method}:${obj.password}`).replace(/=+$/, '');
+      const tag = encodeURIComponent(obj.remarks || '');
+      urls.push(`ss://${a}@${obj.server}:${obj.serverPort}#${tag}`);
+      return true;
+    }
+    if (obj.configType === 'VLESS' && obj.password && obj.server && obj.serverPort) {
+      const params = new URLSearchParams();
+      params.set('encryption', obj.method || 'none');
+      params.set('security', obj.security || '');
+      if (obj.flow) params.set('flow', obj.flow);
+      if (obj.network) params.set('type', obj.network);
+      if (obj.headerType) params.set('headerType', obj.headerType);
+      if (obj.host) params.set('host', obj.host);
+      if (obj.path) params.set('path', obj.path);
+      if (obj.sni) params.set('sni', obj.sni);
+      if (obj.fingerPrint) params.set('fp', obj.fingerPrint);
+      if (obj.alpn) params.set('alpn', Array.isArray(obj.alpn) ? obj.alpn.join(',') : obj.alpn);
+      if (obj.publicKey) params.set('pbk', obj.publicKey);
+      if (obj.shortId) params.set('sid', obj.shortId);
+      if (obj.allowInsecure !== undefined) params.set('allowInsecure', obj.allowInsecure ? '1' : '0');
+      const tag = encodeURIComponent(obj.remarks || '');
+      urls.push(`vless://${obj.password}@${obj.server}:${obj.serverPort}?${params.toString()}#${tag}`);
+      return true;
+    }
+    return false;
+  }
+</script>
+<script>
+// Сохраняем оригиналы
+const _oldConvert    = document.getElementById('btnConvert').onclick;
+const _oldConvertBack = document.getElementById('btnConvertBack').onclick;
+
+// Новый btnConvert: JSON→URL с поддержкой WireGuard/Hysteria2
+document.getElementById('btnConvert').onclick = function() {
+  const raw = document.getElementById('inputConfig').value.trim();
+  // Hysteria2 JSON→URL
+  try {
+    const obj = JSON.parse(raw);
+    if (Array.isArray(obj.outbounds)) {
+      const h = obj.outbounds.find(o => o.protocol === 'hysteria2');
+      if (h) {
+        const srv = h.settings.servers[0],
+              pwd = h.streamSettings.hy2Settings.password,
+              addr = srv.address, prt = srv.port,
+              ins  = h.streamSettings.tlsSettings.allowInsecure ? '1' : '0',
+              sni  = encodeURIComponent(h.streamSettings.tlsSettings.serverName || ''),
+              tag  = encodeURIComponent(obj.remarks||h.tag||'');
+        document.getElementById('outputResult').value =
+          `hysteria2://${encodeURIComponent(pwd)}@${addr}:${prt}/?insecure=${ins}&sni=${sni}#${tag}`;
+        return;
+      }
+    }
+  } catch {}
+
+  // WireGuard INI→URL
+  if (raw.startsWith('[Interface]')) {
+    const lines = raw.split('\n').map(l=>l.split('=').map(s=>s.trim()));
+    const get = k=>lines.find(l=>l[0]===k)?.[1];
+    const settings = {
+      address:   [get('Address')],
+      mtu:       parseInt(get('MTU'),10),
+      secretKey: get('PrivateKey'),
+      peers: [{ endpoint: get('Endpoint'), publicKey: get('PublicKey'),
+                preSharedKey: get('PreSharedKey'), keepAlive: parseInt(get('PersistentKeepalive'),10) }]
+    };
+    // из B: buildWireguardURL(settings)
+    const peer = settings.peers[0],
+          [host, port] = peer.endpoint.split(':'),
+          priv = encodeURIComponent(settings.secretKey),
+          pub  = encodeURIComponent(peer.publicKey),
+          psk  = encodeURIComponent(peer.preSharedKey||''),
+          addr = encodeURIComponent(settings.address[0]),
+          mtu  = settings.mtu,
+          params = `address=${addr}&presharedkey=${psk}&publickey=${pub}&mtu=${mtu}&reserved=0,0,0`;
+    document.getElementById('outputResult').value = `wireguard://${priv}@${host}:${port}?${params}`;
+    return;
+  }
+
+  // Иначе — вызов старой логики JSON→URL
+  _oldConvert();
+};
+
+// Новый btnConvertBack: URL→JSON с поддержкой WireGuard/Hysteria2
+document.getElementById('btnConvertBack').onclick = function() {
+  const raw = document.getElementById('inputConfig').value.trim();
+
+  // wireguard:// → JSON
+  if (raw.startsWith('wireguard://')) {
+    try {
+      const u = new URL(raw),
+            priv = decodeURIComponent(u.username),
+            [host, port] = u.host.split(':'),
+            p = u.searchParams,
+            address = p.get('address'),
+            presharedkey = decodeURIComponent(p.get('presharedkey')||''),
+            publickey    = decodeURIComponent(p.get('publickey')||''),
+            mtu = parseInt(p.get('mtu'),10),
+            tag = decodeURIComponent(u.hash.slice(1))||'wireguard',
+            json = {
+              dns:{fallbackStrategy:"disabledIfAnyMatch",servers:[{address:"8.8.8.8",queryStrategy:"UseIP"}]},
+              inbounds:[
+                {listen:"0.0.0.0",port:10805,protocol:"socks",settings:{auth:"noauth",udp:true},tag:"socks"},
+                {listen:"0.0.0.0",port:1080,protocol:"http",settings:{allowTransparent:true},tag:"http"},
+                {listen:"0.0.0.0",port:10804,protocol:"dokodemo-door",settings:{address:"0.0.0.0",network:"tcp,udp",port:10804},tag:"dns-in"}
+              ],
+              log:{loglevel:"warning"},
+              outbounds:[
+                {
+                  domainStrategy:"UseIPv4",protocol:"wireguard",
+                  settings:{
+                    address:[address],mtu,secretKey:priv,
+                    peers:[{endpoint:`${host}:${port}`,publicKey,preSharedKey:presharedkey,keepAlive:0}]
+                  },
+                  tag
+                },
+                {protocol:"freedom",tag:"direct"},
+                {protocol:"freedom",tag:"bypass"},
+                {protocol:"blackhole",tag:"block"},
+                {protocol:"dns",proxySettings:{tag,transportLayer:true},settings:{userLevel:1},tag:"dns-out"}
+              ],
+              policy:{levels:{"1":{connIdle:30}},system:{statsOutboundDownlink:true,statsOutboundUplink:true}},
+              routing:{domainStrategy:"AsIs",rules:[
+                {inboundTag:["dns-in"],outboundTag:"dns-out",type:"field"},
+                {ip:[host],outboundTag:"direct",type:"field"}
+              ]},
+              stats:{}
+            };
+      document.getElementById('outputResult').value = JSON.stringify(json,null,2);
+    } catch(e) {
+      alert("Ошибка разбора wireguard URL: "+e);
+    }
+    return;
+  }
+
+  // hysteria2:// → JSON
+  if (raw.startsWith('hysteria2://')) {
+    const regex = /^hysteria2:\/\/(.+?)@([^:/]+):(\d+)\/\?insecure=(\d+)&sni=(.+?)#/;
+    const m = raw.match(regex);
+    if (!m) return alert('Неверный формат hysteria2 URL');
+    const password = decodeURIComponent(m[1]),
+          address  = m[2],
+          port     = parseInt(m[3],10),
+          insecure = m[4]==='1',
+          sni      = decodeURIComponent(m[5]),
+          json = {
+            dns:{fallbackStrategy:"disabledIfAnyMatch",servers:[{address:"8.8.8.8",queryStrategy:"UseIP"}]},
+            inbounds:[
+              {listen:"0.0.0.0",port:10805,protocol:"socks",settings:{auth:"noauth",udp:true},tag:"socks"},
+              {listen:"0.0.0.0",port:1080,protocol:"http",settings:{allowTransparent:true},tag:"http"},
+              {listen:"0.0.0.0",port:10804,protocol:"dokodemo-door",settings:{address:"0.0.0.0",network:"tcp,udp",port:10804},tag:"dns-in"}
+            ],
+            log:{loglevel:"warning"},
+            outbounds:[
+              {
+                domainStrategy:"AsIs",protocol:"hysteria2",
+                settings:{servers:[{address,port}]},
+                streamSettings:{
+                  network:"hysteria2",security:"tls",
+                  tlsSettings:{allowInsecure:insecure,serverName:sni},
+                  hy2Settings:{congestion:{down_mbps:0,up_mbps:0},password,use_udp_extension:true}
+                },
+                tag:"hysteria2"
+              },
+              {protocol:"freedom",tag:"direct"},
+              {protocol:"freedom",tag:"bypass"},
+              {protocol:"blackhole",tag:"block"},
+              {protocol:"dns",proxySettings:{tag:"hysteria2",transportLayer:true},settings:{userLevel:1},tag:"dns-out"}
+            ],
+            policy:{levels:{"1":{connIdle:30}},system:{statsOutboundDownlink:true,statsOutboundUplink:true}},
+            routing:{domainStrategy:"AsIs",rules:[
+              {inboundTag:["dns-in"],outboundTag:"dns-out",type:"field"},
+              {ip:[address],outboundTag:"direct",type:"field"}
+            ]},
+            stats:{}
+          };
+    document.getElementById('outputResult').value = JSON.stringify(json,null,2);
+    return;
+  }
+
+  // иначе — старая логика URL→JSON
+  _oldConvertBack();
+};
+</script>
 </body>
 </html>
